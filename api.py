@@ -2,9 +2,9 @@ import argparse
 import sys
 import json
 
+
 def validateData(data, keys):
     listOfKeys = data[0].keys()
-    ##Test if all dict data has the same key
     for dictionary in data:
         if not dictionary.keys() == listOfKeys:
             return False
@@ -15,25 +15,33 @@ def validateData(data, keys):
     return True
 
 def processData(inputJson, keys):
-    result = {} #create a new dict to hold the result
+    result = {}
     it_result = result
-
     for data in inputJson:
         i = 0
-        valuesArray = []
         for currentKey in keys:
             if i+1 < len(keys):
                 if data[currentKey] not in it_result:
                     it_result[data[currentKey]] = {}
-                it_result = it_result[data[currentKey]]
-            i += 1
-        for key in data:
-            if key not in keys:
-                valuesArray.append({key: data[key]})
-        it_result[data[currentKey]] = valuesArray
+                it_result = it_result[data.pop(currentKey)]
+            else:
+                if data.get(currentKey) in it_result:
+                        it_result[data.pop(currentKey)].append(data)
+                else:
+                        it_result[data.pop(currentKey)] = [data]
+            i+=1
         it_result = result
 
     return result
+
+def _not_listed(self, nlevels, data):
+        not_listed = []
+        for key in data:
+            if key not in nlevels:
+                not_listed.append({key: data[key]})
+
+        return not_listed
+
 
 def processInputFile(from_file, file):
     with open(file, 'r') as out:
@@ -45,55 +53,22 @@ def processInput():
     for line in sys.stdin.readlines():
         input_text += line
     json_data = json.loads(input_text)
-
     return json_data
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('keys', type=str, nargs='+')
+    parser.add_argument('-f',type=str,nargs='?')
+    args = parser.parse_args()
 
-    jsonIn = [
-                      {
-                        "country": "US",
-                        "city": "Boston",
-                        "currency": "USD",
-                        "amount": 100
-                      },
-                      {
-                        "country": "FR",
-                        "city": "Paris",
-                        "currency": "EUR",
-                        "amount": 20
-                      },
-                      {
-                        "country": "FR",
-                        "city": "Lyon",
-                        "currency": "EUR",
-                        "amount": 11.4
-                      },
-                      {
-                        "country": "ES",
-                        "city": "Madrid",
-                        "currency": "EUR",
-                        "amount": 8.9
-                      },
-                      {
-                        "country": "UK",
-                        "city": "London",
-                        "currency": "GBP",
-                        "amount": 12.2
-                      },
-                      {
-                        "country": "UK",
-                        "city": "London",
-                        "currency": "FBP",
-                        "amount": 10.9
-                      }
-                    ]
+    if args.f:
+        jsonIn = processInputFile(from_file=True, file=args.f)
+    else:
+        jsonIn = processInput()
 
-    keys=["currency","country","city"]
-
-    if validateData(jsonIn, keys):
-        result=processData(jsonIn, keys)
+    if validateData(jsonIn, args.keys):
+        result=processData(jsonIn, args.keys)
         sys.stdout.write(json.dumps(result, indent=2, sort_keys=True))
         sys.stdout.close()
     else:
