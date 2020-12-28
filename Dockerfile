@@ -3,6 +3,7 @@ ADD api.py /
 ADD webapi.py /
 RUN pip install pystrich
 COPY requirements.txt /
+EXPOSE 5000
 RUN pip3 install --trusted-host pypi.python.org -r /requirements.txt
 CMD [ "python", "./api.py" ]
 CMD [ "python", "./webapi.py" ]
